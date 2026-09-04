@@ -1,0 +1,9 @@
+bleak>=1.0
+bleak-retry-connector
+aiohttp
+ecdsa~=0.19
+protobuf~=6.30
+PyCryptodome~=3.23
+python-dotenv
+meshtastic
+paho-mqtt
