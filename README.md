@@ -101,6 +101,12 @@ Things that cost time during development:
 - `remaining_time_charging` returns 12927 as a placeholder for "unknown".
 - On the Delta 3 Max Plus the USB ports cannot be switched and there is no
   second USB-A port, although the library exposes both.
+- The station reports only what leaves its ports. Its own idle draw (BMS,
+  inverter standby, display) is not in `output_power`: measured over 13.5 h,
+  the counter showed 47 Wh while the state of charge dropped by about 100 Wh.
+  Name the Home Assistant sensor "output energy", not "discharge".
+- Nodes on other channels are filtered out before logging. Without that filter
+  a nearby public mesh fills the journal with discarded-message warnings.
 
 ## Credits
 
