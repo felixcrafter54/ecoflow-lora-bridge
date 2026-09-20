@@ -1,0 +1,27 @@
+[Unit]
+Description=EcoFlow Meshtastic to MQTT Gateway (Haus)
+Documentation=https://github.com/felixcrafter54/ecoflow-lora-bridge
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/mesh-gateway
+EnvironmentFile=/opt/mesh-gateway/.env
+ExecStart=/opt/mesh-gateway/.venv/bin/python src/gateway.py
+
+Restart=always
+RestartSec=15
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ef-gateway
+
+KillSignal=SIGINT
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

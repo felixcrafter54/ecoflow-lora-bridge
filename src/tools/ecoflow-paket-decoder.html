@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paket-Decoder — EcoFlow LoRa Bridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Aderfarben nach DIN: braun = Last, blau = Zuleitung, gruen-gelb = Erzeugung */
+  --papier:#EDEEE9;
+  --papier-2:#E3E5DF;
+  --tinte:#1C2321;
+  --tinte-leise:#5E6763;
+  --raster:#C9CCC5;
+  --last:#6E3F22;
+  --zuleitung:#17456E;
+  --erzeugung:#7C8F1C;
+  --alarm:#A62612;
+  --radius:2px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--papier);
+  color:var(--tinte);
+  font-family:"IBM Plex Sans",system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+}
+.zahl{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+
+.blatt{max-width:66rem;margin:0 auto;padding:2rem 1.25rem 5rem}
+
+/* ---------- Kopf ---------- */
+header{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem 1rem;
+  padding-bottom:.75rem;border-bottom:2px solid var(--tinte);
+}
+h1{font-size:1.375rem;font-weight:600;margin:0;letter-spacing:-.01em}
+header p{margin:0;color:var(--tinte-leise);font-size:.9375rem}
+
+/* ---------- Eingabe ---------- */
+.eingabe{margin:1.75rem 0}
+label{display:block;font-weight:500;margin-bottom:.5rem}
+textarea{
+  width:100%;min-height:5.5rem;resize:vertical;
+  padding:.75rem .875rem;
+  border:1px solid var(--raster);border-radius:var(--radius);
+  background:#fff;color:var(--tinte);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.9375rem;line-height:1.6;
+}
+textarea:focus-visible{outline:2px solid var(--zuleitung);outline-offset:1px;border-color:var(--zuleitung)}
+.werkzeuge{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.625rem}
+button{
+  font:inherit;font-size:.875rem;
+  padding:.4rem .75rem;
+  border:1px solid var(--tinte);border-radius:var(--radius);
+  background:transparent;color:var(--tinte);cursor:pointer;
+}
+button:hover{background:var(--tinte);color:var(--papier)}
+button:focus-visible{outline:2px solid var(--zuleitung);outline-offset:2px}
+
+/* ---------- Meldung ---------- */
+.meldung{
+  border-left:4px solid var(--alarm);
+  background:var(--papier-2);
+  padding:.75rem .875rem;margin:1.25rem 0;
+  font-size:.9375rem;
+}
+.meldung b{display:block;font-weight:600}
+.meldung.leer{border-left-color:var(--raster);color:var(--tinte-leise)}
+
+/* ---------- Flussbild ---------- */
+.fluss{
+  display:grid;gap:1px;
+  grid-template-columns:1fr 1.2fr 1fr;
+  background:var(--raster);
+  border:1px solid var(--raster);
+  margin:1.5rem 0;
+}
+.zelle{background:var(--papier);padding:1.125rem 1rem}
+.zelle h2{font-size:.9375rem;font-weight:500;margin:0 0 .5rem;color:var(--tinte-leise)}
+.gross{font-size:2.5rem;line-height:1;font-weight:500;letter-spacing:-.02em}
+.gross .einheit{font-size:1rem;font-weight:400;margin-left:.25rem;color:var(--tinte-leise)}
+.zelle.ein .gross{color:var(--zuleitung)}
+.zelle.aus .gross{color:var(--last)}
+.teil{margin-top:.625rem;font-size:.875rem;color:var(--tinte-leise);display:flex;justify-content:space-between;gap:1rem}
+.teil .pv{color:var(--erzeugung)}
+
+/* Akkusaeule */
+.akku{display:flex;align-items:center;gap:1rem}
+.saeule{
+  position:relative;flex:0 0 3.25rem;height:6.5rem;
+  border:2px solid var(--tinte);border-radius:var(--radius);
+  overflow:hidden;background:#fff;
+}
+.saeule::before{
+  content:"";position:absolute;left:50%;top:-6px;transform:translateX(-50%);
+  width:1.25rem;height:5px;background:var(--tinte);
+}
+.fuellung{position:absolute;left:0;right:0;bottom:0;background:var(--erzeugung)}
+.fuellung.schwach{background:var(--last)}
+@media(prefers-reduced-motion:no-preference){.fuellung{transition:height .35s ease}}
+.marke{position:absolute;left:0;right:0;height:1px;background:var(--tinte);opacity:.35}
+
+/* ---------- Klemmen / Ports ---------- */
+.abschnitt{margin:2rem 0 0}
+.abschnitt h2{
+  font-size:1rem;font-weight:600;margin:0 0 .75rem;
+  padding-bottom:.375rem;border-bottom:1px solid var(--raster);
+}
+.klemmen{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:1px;background:var(--raster);border:1px solid var(--raster)}
+.klemme{background:var(--papier);padding:.75rem .875rem}
+.klemme .name{font-size:.875rem;color:var(--tinte-leise)}
+.klemme .wert{font-size:1.25rem;font-weight:500;margin-top:.125rem}
+.klemme.aktiv .wert{color:var(--last)}
+
+/* Schaltzustaende */
+.schalter{display:flex;flex-wrap:wrap;gap:.5rem}
+.zustand{
+  display:flex;align-items:center;gap:.5rem;
+  border:1px solid var(--raster);border-radius:var(--radius);
+  padding:.5rem .75rem;background:#fff;font-size:.9375rem;
+}
+.lampe{width:.75rem;height:.75rem;border-radius:50%;border:1px solid var(--tinte);background:transparent}
+.zustand.an .lampe{background:var(--erzeugung)}
+.zustand.stoerung .lampe{background:var(--alarm)}
+.zustand.stoerung{border-color:var(--alarm);color:var(--alarm)}
+
+/* ---------- Tabellen ---------- */
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+th,td{text-align:left;padding:.5rem .625rem;border-bottom:1px solid var(--raster)}
+th{font-weight:500;color:var(--tinte-leise)}
+td.num,th.num{text-align:right;font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:none}
+tr.luecke td{color:var(--alarm)}
+
+.rohdaten{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8125rem;
+  word-break:break-all;color:var(--tinte-leise);
+  background:var(--papier-2);padding:.625rem .75rem;border-radius:var(--radius);
+}
+footer{margin-top:3rem;padding-top:.75rem;border-top:1px solid var(--raster);color:var(--tinte-leise);font-size:.875rem}
+.verborgen{display:none}
+@media(max-width:44rem){
+  .fluss{grid-template-columns:1fr}
+  .gross{font-size:2rem}
+}
+</style>
+</head>
+<body>
+<div class="blatt">
+
+<header>
+  <h1>Paket-Decoder</h1>
+  <p>Protokoll v3 · EcoFlow LoRa Bridge</p>
+</header>
+
+<div class="eingabe">
+  <label for="quelle">Pakete aus der Meshtastic-App oder dem Log einfügen</label>
+  <textarea id="quelle" spellcheck="false" autocomplete="off"
+    placeholder="3,780,0,16,0,0,0,2,0,0,14,22,4,41,142380,98120,45210,12030,12927,3716"></textarea>
+  <div class="werkzeuge">
+    <button type="button" id="beispiel">Beispiel einfügen</button>
+    <button type="button" id="leeren">Leeren</button>
+  </div>
+</div>
+
+<div id="hinweis" class="meldung leer">
+  <b>Noch nichts eingefügt</b>
+  Log-Zeilen dürfen mit hineinkopiert werden — der Decoder sucht sich die CSV-Zeile heraus.
+  Mehrere Pakete untereinander werden alle gelesen.
+</div>
+
+<div id="ergebnis" class="verborgen">
+
+  <div class="fluss">
+    <div class="zelle ein">
+      <h2>Eingang</h2>
+      <div class="gross zahl"><span id="p-in">–</span><span class="einheit">W</span></div>
+      <div class="teil"><span class="pv">Solar 1</span><span class="zahl" id="p-pv1">–</span></div>
+      <div class="teil"><span class="pv">Solar 2</span><span class="zahl" id="p-pv2">–</span></div>
+    </div>
+
+    <div class="zelle">
+      <h2>Akku</h2>
+      <div class="akku">
+        <div class="saeule">
+          <div class="fuellung" id="fuellung" style="height:0"></div>
+          <div class="marke" style="bottom:50%"></div>
+        </div>
+        <div>
+          <div class="gross zahl"><span id="soc">–</span><span class="einheit">%</span></div>
+          <div class="teil"><span>Zelltemperatur</span><span class="zahl" id="temp">–</span></div>
+          <div class="teil"><span>Restzeit</span><span class="zahl" id="restzeit">–</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="zelle aus">
+      <h2>Ausgang</h2>
+      <div class="gross zahl"><span id="p-out">–</span><span class="einheit">W</span></div>
+      <div class="teil"><span>12 V</span><span class="zahl" id="p-dc12">–</span></div>
+      <div class="teil"><span>USB gesamt</span><span class="zahl" id="p-usb">–</span></div>
+    </div>
+  </div>
+
+  <section class="abschnitt">
+    <h2>Ausgänge</h2>
+    <div class="schalter" id="schalter"></div>
+  </section>
+
+  <section class="abschnitt">
+    <h2>USB-Anschlüsse</h2>
+    <div class="klemmen" id="klemmen"></div>
+  </section>
+
+  <section class="abschnitt">
+    <h2>Energiezähler</h2>
+    <table>
+      <thead>
+        <tr><th>Zähler</th><th class="num">kWh</th><th class="num">Wh</th></tr>
+      </thead>
+      <tbody id="zaehler"></tbody>
+    </table>
+  </section>
+
+  <section class="abschnitt">
+    <h2>Paket</h2>
+    <table>
+      <tbody id="meta"></tbody>
+    </table>
+  </section>
+
+  <section class="abschnitt verborgen" id="verlauf-block">
+    <h2>Alle gelesenen Pakete</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="num">seq</th><th class="num">SoC %</th>
+          <th class="num">Ein W</th><th class="num">Aus W</th>
+          <th class="num">Wh ein</th><th class="num">Wh aus</th><th>Anmerkung</th>
+        </tr>
+      </thead>
+      <tbody id="verlauf"></tbody>
+    </table>
+  </section>
+
+  <section class="abschnitt">
+    <h2>Rohzeile</h2>
+    <p class="rohdaten" id="roh"></p>
+  </section>
+
+</div>
+
+<footer>
+  Läuft vollständig im Browser. Es wird nichts hochgeladen und nichts gespeichert.
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* Muss zu src/protocol.py passen. Bei Formataenderung dort VERSION hochzaehlen. */
+const VERSION = 3;
+const RT_UNKNOWN = 12927;
+
+const LAYOUT = [
+  ["soc",10],["p_in",1],["p_out",1],["p_pv1",1],["p_pv2",1],["p_dc12",1],
+  ["p_usba",1],["p_usbc",1],["p_usbc2",1],["p_usbc3",1],["temp",1],
+  ["flags",1],["seq",1],
+  ["wh_in",1],["wh_out",1],["wh_pv1",1],["wh_pv2",1],
+  ["rt_chg",1],["rt_dis",1]
+];
+
+const FLAG_BITS = {ac_ports:0, ac_ports_2:1, dc_12v_port:2, error_occurred:3};
+
+const FLAG_NAMEN = [
+  ["ac_ports","AC-Ausgang"],
+  ["ac_ports_2","AC-Ausgang 2"],
+  ["dc_12v_port","12-V-Ausgang"]
+];
+
+const USB_NAMEN = [
+  ["p_usba","USB-A"],
+  ["p_usbc","USB-C 1"],
+  ["p_usbc2","USB-C 2"],
+  ["p_usbc3","USB-C 3"]
+];
+
+const ZAEHLER_NAMEN = [
+  ["wh_in","Eingang gesamt"],
+  ["wh_out","Ausgang gesamt"],
+  ["wh_pv1","Solar 1"],
+  ["wh_pv2","Solar 2"]
+];
+
+/* --- Parser ------------------------------------------------------- */
+
+class PaketFehler extends Error {}
+
+function csvZeilenFinden(text){
+  // Erlaubt Log-Praefixe und Zeitstempel drumherum.
+  const treffer = [];
+  for (const zeile of text.split(/\r?\n/)){
+    const m = zeile.match(/\d+(?:,-?\d*){19}(?![\d,])/);
+    if (m) treffer.push(m[0]);
+    else if (zeile.trim()) treffer.push(zeile.trim()); // damit Fehler sichtbar werden
+  }
+  return treffer;
+}
+
+function decode(text){
+  const teile = text.trim().split(",");
+  if (!teile[0]) throw new PaketFehler("Leere Zeile.");
+  const ver = Number.parseInt(teile[0], 10);
+  if (Number.isNaN(ver))
+    throw new PaketFehler(`Beginnt nicht mit einer Versionsnummer: „${teile[0].slice(0,24)}“`);
+  if (ver !== VERSION)
+    throw new PaketFehler(`Formatversion ${ver}, dieser Decoder liest Version ${VERSION}.`);
+  if (teile.length !== LAYOUT.length + 1)
+    throw new PaketFehler(`${teile.length} Felder gelesen, erwartet werden ${LAYOUT.length + 1}.`);
+
+  const s = {};
+  LAYOUT.forEach(([name, skala], i) => {
+    const roh = teile[i+1];
+    if (roh === ""){ s[name] = null; return; }
+    const v = Number.parseInt(roh, 10);
+    if (Number.isNaN(v)) throw new PaketFehler(`Feld „${name}“ ist keine Zahl: „${roh}“`);
+    s[name] = skala === 1 ? v : v / skala;
+  });
+  return s;
+}
+
+const flag = (s, name) => ((s.flags ?? 0) & (1 << FLAG_BITS[name])) !== 0;
+const restzeit = v => (v === null || v <= 0 || v >= RT_UNKNOWN) ? null : v;
+
+/* --- Formatierung ------------------------------------------------- */
+
+const z = (v, n = 0, einheit = "") =>
+  v === null || v === undefined ? "–" :
+  v.toLocaleString("de-DE",{minimumFractionDigits:n, maximumFractionDigits:n}) + einheit;
+
+function dauer(min){
+  if (min === null) return "–";
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? `${h} h ${String(m).padStart(2,"0")} min` : `${m} min`;
+}
+
+/* --- Anzeige ------------------------------------------------------ */
+
+const $ = id => document.getElementById(id);
+
+function hinweisZeigen(titel, text, leer = false){
+  const el = $("hinweis");
+  el.className = "meldung" + (leer ? " leer" : "");
+  el.innerHTML = "";
+  const b = document.createElement("b"); b.textContent = titel;
+  el.append(b, document.createTextNode(text));
+  el.classList.remove("verborgen");
+  $("ergebnis").classList.add("verborgen");
+}
+
+function zeichnen(s, roh, alle){
+  $("hinweis").classList.add("verborgen");
+  $("ergebnis").classList.remove("verborgen");
+
+  $("p-in").textContent   = z(s.p_in);
+  $("p-out").textContent  = z(s.p_out);
+  $("p-pv1").textContent  = z(s.p_pv1, 0, " W");
+  $("p-pv2").textContent  = z(s.p_pv2, 0, " W");
+  $("p-dc12").textContent = z(s.p_dc12, 0, " W");
+
+  const usb = ["p_usba","p_usbc","p_usbc2","p_usbc3"]
+    .reduce((a,k) => a + (s[k] ?? 0), 0);
+  $("p-usb").textContent = z(usb, 0, " W");
+
+  $("soc").textContent  = z(s.soc, 1);
+  $("temp").textContent = z(s.temp, 0, " °C");
+
+  const lade = restzeit(s.rt_chg), entlade = restzeit(s.rt_dis);
+  $("restzeit").textContent =
+    lade !== null ? dauer(lade) + " bis voll" :
+    entlade !== null ? dauer(entlade) + " verbleibend" : "–";
+
+  const f = $("fuellung");
+  const soc = s.soc ?? 0;
+  f.style.height = Math.max(0, Math.min(100, soc)) + "%";
+  f.classList.toggle("schwach", soc <= 20);
+
+  // Schaltzustaende
+  const sch = $("schalter");
+  sch.innerHTML = "";
+  for (const [key, name] of FLAG_NAMEN){
+    const an = flag(s, key);
+    const d = document.createElement("div");
+    d.className = "zustand" + (an ? " an" : "");
+    d.innerHTML = `<span class="lampe"></span><span>${name}</span>`;
+    d.lastElementChild.textContent = `${name} ${an ? "ein" : "aus"}`;
+    sch.append(d);
+  }
+  if (flag(s, "error_occurred")){
+    const d = document.createElement("div");
+    d.className = "zustand stoerung";
+    d.innerHTML = `<span class="lampe"></span><span></span>`;
+    d.lastElementChild.textContent = "Störungsbit gesetzt";
+    sch.append(d);
+  }
+
+  // USB
+  const kl = $("klemmen");
+  kl.innerHTML = "";
+  for (const [key, name] of USB_NAMEN){
+    const w = s[key];
+    const d = document.createElement("div");
+    d.className = "klemme" + (w ? " aktiv" : "");
+    const n = document.createElement("div"); n.className = "name"; n.textContent = name;
+    const v = document.createElement("div"); v.className = "wert zahl";
+    v.textContent = z(w, 0, " W");
+    d.append(n, v);
+    kl.append(d);
+  }
+
+  // Zaehler
+  const tb = $("zaehler");
+  tb.innerHTML = "";
+  for (const [key, name] of ZAEHLER_NAMEN){
+    const wh = s[key];
+    const tr = document.createElement("tr");
+    const td1 = document.createElement("td"); td1.textContent = name;
+    const td2 = document.createElement("td"); td2.className = "num";
+    td2.textContent = wh === null ? "–" : z(wh/1000, 2);
+    const td3 = document.createElement("td"); td3.className = "num";
+    td3.textContent = z(wh);
+    tr.append(td1, td2, td3);
+    tb.append(tr);
+  }
+
+  // Meta
+  const meta = $("meta");
+  meta.innerHTML = "";
+  const zeilen = [
+    ["Sequenznummer", z(s.seq)],
+    ["Flags", `${s.flags} (0b${(s.flags ?? 0).toString(2).padStart(4,"0")})`],
+    ["Restzeit laden", lade === null ? "unbekannt (Platzhalter 12927)" : dauer(lade)],
+    ["Restzeit entladen", entlade === null ? "unbekannt" : dauer(entlade)],
+    ["Zeichen", `${roh.length}`]
+  ];
+  for (const [k, v] of zeilen){
+    const tr = document.createElement("tr");
+    const a = document.createElement("th"); a.textContent = k;
+    const b = document.createElement("td"); b.className = "num"; b.textContent = v;
+    tr.append(a, b);
+    meta.append(tr);
+  }
+
+  $("roh").textContent = roh;
+
+  // Verlauf mit Lueckenerkennung
+  const block = $("verlauf-block"), vb = $("verlauf");
+  vb.innerHTML = "";
+  if (alle.length > 1){
+    block.classList.remove("verborgen");
+    let vorher = null;
+    for (const p of alle){
+      const tr = document.createElement("tr");
+      let anmerkung = "";
+      if (vorher !== null){
+        const fehlend = (p.seq - vorher - 1 + 65536) % 65536;
+        if (fehlend > 0 && fehlend < 1000){
+          anmerkung = `${fehlend} Paket${fehlend > 1 ? "e" : ""} fehlt${fehlend > 1 ? "en" : ""}`;
+          tr.className = "luecke";
+        }
+      }
+      vorher = p.seq;
+      for (const v of [z(p.seq), z(p.soc,1), z(p.p_in), z(p.p_out), z(p.wh_in), z(p.wh_out)]){
+        const td = document.createElement("td"); td.className = "num"; td.textContent = v;
+        tr.append(td);
+      }
+      const td = document.createElement("td"); td.textContent = anmerkung;
+      tr.append(td);
+      vb.append(tr);
+    }
+  } else {
+    block.classList.add("verborgen");
+  }
+}
+
+/* --- Steuerung ---------------------------------------------------- */
+
+function auswerten(){
+  const text = $("quelle").value;
+  if (!text.trim()){
+    hinweisZeigen("Noch nichts eingefügt",
+      " Log-Zeilen dürfen mit hineinkopiert werden — der Decoder sucht sich die CSV-Zeile heraus. " +
+      "Mehrere Pakete untereinander werden alle gelesen.", true);
+    return;
+  }
+
+  const zeilen = csvZeilenFinden(text);
+  const gelesen = [];
+  let letzterFehler = null;
+
+  for (const zeile of zeilen){
+    try { gelesen.push({...decode(zeile), _roh: zeile}); }
+    catch (e){ letzterFehler = e; }
+  }
+
+  if (!gelesen.length){
+    hinweisZeigen("Kein gültiges Paket gefunden",
+      " " + (letzterFehler ? letzterFehler.message : "Die Zeile passt nicht zum Format."));
+    return;
+  }
+
+  const letztes = gelesen[gelesen.length - 1];
+  zeichnen(letztes, letztes._roh, gelesen);
+}
+
+$("quelle").addEventListener("input", auswerten);
+
+$("beispiel").addEventListener("click", () => {
+  $("quelle").value =
+    "3,780,0,16,0,0,0,2,0,0,14,22,4,41,142380,98120,45210,12030,12927,3716\n" +
+    "3,775,0,412,0,0,0,2,0,0,14,22,5,42,142380,98188,45210,12030,12927,3502\n" +
+    "3,762,0,398,0,0,0,2,0,0,14,23,5,45,142380,98301,45210,12030,12927,3388";
+  auswerten();
+  $("quelle").focus();
+});
+
+$("leeren").addEventListener("click", () => {
+  $("quelle").value = "";
+  auswerten();
+  $("quelle").focus();
+});
+</script>
+</body>
+</html>

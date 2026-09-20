@@ -1,0 +1,36 @@
+[Unit]
+Description=EcoFlow BLE to LoRa Bridge (Garage)
+Documentation=https://github.com/felixcrafter54/ecoflow-lora-bridge
+After=bluetooth.target
+Requires=bluetooth.target
+
+[Service]
+Type=simple
+User=felix
+WorkingDirectory=/home/felix/ecoflow-lora-bridge
+EnvironmentFile=/home/felix/ecoflow-lora-bridge/.env
+ExecStart=/home/felix/ecoflow-lora-bridge/.venv/bin/python src/bridge.py
+
+# Der BT-Chip ist beim Pi 3B erst nach rund 12 s initialisiert.
+ExecStartPre=/bin/sleep 20
+
+Restart=always
+RestartSec=15
+
+# Nach vielen Fehlstarts kurz hintereinander nicht endlos weiterversuchen,
+# sondern eine Pause einlegen.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
+SupplementaryGroups=dialout bluetooth
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ef-bridge
+
+# Sauber beenden, damit storage.close() die Zaehler schreibt.
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
