@@ -269,11 +269,9 @@ class Bridge:
         d = packet.get("decoded", {})
         if d.get("portnum") != "TEXT_MESSAGE_APP":
             return
-        if packet.get("channel", 0) != CHANNEL:
-            return                          # fremder Kanal, still ignorieren
         src = packet.get("from")
         if src != PEER:
-            log.warning("Nachricht von %#010x verworfen", src or 0)
+            log.debug("Nachricht von %#010x verworfen", src or 0)
             return
         text = d.get("text", "")
         self.loop.call_soon_threadsafe(

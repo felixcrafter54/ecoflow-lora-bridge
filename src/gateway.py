@@ -182,10 +182,8 @@ class Gateway:
         d = packet.get("decoded", {})
         if d.get("portnum") != "TEXT_MESSAGE_APP":
             return
-        if packet.get("channel", 0) != CHANNEL:
-            return
         if packet.get("from") != PEER:
-            return
+            return   		# fremder Node, still ignorieren
 
         try:
             s = proto.decode(d.get("text", ""))

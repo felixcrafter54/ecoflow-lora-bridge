@@ -243,6 +243,9 @@ Things that cost time during development:
   a nearby public mesh fills the journal with discarded-message warnings.
 - Total idle draw of the whole setup is around 7.5 W, of which roughly 3.5 W is
   the Pi and the node. That is about 9 % of the battery per day with no sun.
+- Direct messages with PKI encryption do not carry the channel index you would
+  expect on the receiving node. Filter incoming packets by sender, not by
+  channel; `MESH_CHANNEL_INDEX` only applies when sending.
 
 ## Credits
 
