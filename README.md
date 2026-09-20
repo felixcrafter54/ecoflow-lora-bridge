@@ -248,7 +248,7 @@ Things that cost time during development:
 
 Protocol work by [rabits/ha-ef-ble](https://github.com/rabits/ha-ef-ble) and
 [ef-ble-reverse](https://github.com/rabits/ef-ble-reverse).
-Tested against commit `7fe5589`.
+Tested against commit `affbb60`.
 
 ## License
 

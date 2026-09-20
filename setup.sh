@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Getesteter Stand von ha-ef-ble. Beim Hochziehen siehe README.
-EF_BLE_COMMIT="7fe5589"
+EF_BLE_COMMIT="affbb60"
 EF_BLE_REPO="https://github.com/rabits/ha-ef-ble"
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
