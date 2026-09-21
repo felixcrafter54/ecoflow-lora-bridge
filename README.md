@@ -246,6 +246,11 @@ Things that cost time during development:
 - Direct messages with PKI encryption do not carry the channel index you would
   expect on the receiving node. Filter incoming packets by sender, not by
   channel; `MESH_CHANNEL_INDEX` only applies when sending.
+- `EnvironmentFile` in systemd does not strip trailing comments — put comments
+  on their own line in `.env`, never after a value.
+- Direct messages with PKI encryption do not carry the channel index you would
+  expect on the receiving node. Filter incoming packets by sender, not by
+  channel; `MESH_CHANNEL_INDEX` only applies when sending.
 
 ## Credits
 

@@ -3,6 +3,11 @@ Description=EcoFlow Meshtastic to MQTT Gateway (Haus)
 Documentation=https://github.com/felixcrafter54/ecoflow-lora-bridge
 After=network-online.target
 Wants=network-online.target
+# Nach vielen Fehlstarts kurz hintereinander nicht endlos weiterversuchen,
+# sondern eine Pause einlegen.
+StartLimitIntervalSec=600
+StartLimitBurst=10
+
 
 [Service]
 Type=simple
@@ -13,8 +18,6 @@ ExecStart=/opt/mesh-gateway/.venv/bin/python src/gateway.py
 
 Restart=always
 RestartSec=15
-StartLimitIntervalSec=600
-StartLimitBurst=10
 
 StandardOutput=journal
 StandardError=journal
